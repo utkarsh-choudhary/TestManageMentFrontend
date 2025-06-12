@@ -242,10 +242,10 @@ export default function Dashboard() {
           {/* Page Content */}
           <main className="flex-1 p-6 overflow-auto">
             <Routes>
-              <Route path="/" element={<DashboardContent />} />
-              <Route path="/dashboard" element={<DashboardContent />} />
-              <Route path="/tests" element={<TestsContent />} />
-              <Route path="/user" element={<UserContent />} />
+              <Route index element={<DashboardContent />} />
+              <Route path="dashboard" element={<DashboardContent />} />
+              <Route path="tests/*" element={<TestsContent />} />
+              <Route path="user" element={<UserContent />} />
             </Routes>
           </main>
         </div>

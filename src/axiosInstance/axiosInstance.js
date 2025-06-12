@@ -2,6 +2,9 @@ import axios from "axios";
 
 const apiInstance = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',     
+    }
 });
 
 // Add a request interceptor to include the token in all requests

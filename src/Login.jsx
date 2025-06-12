@@ -68,7 +68,7 @@ export default function LoginPage() {
 
   // Mouse tracking
   useEffect(() => {
-    const handleMouseMove = () => {
+    const handleMouseMove = (e) => {
       setMousePosition({ x: e.clientX, y: e.clientY })
     }
 
@@ -210,13 +210,19 @@ export default function LoginPage() {
       
       // Store any necessary data from response
       if (response.data) {
-        // You might want to store the token or user data in localStorage/context
+        // Store the token and role in localStorage
         localStorage.setItem('token', response.data.user.token)
+        localStorage.setItem("role", response.data.user.role)
       }
 
-      // Navigate to home page after a short delay
+      // Navigate based on user role
       setTimeout(() => {
-        navigate('/dashboard')
+        const userRole = response.data.user.role
+        if (userRole === 'USER') {
+          navigate('/user')
+        } else if (userRole === 'ADMIN' || userRole === 'HR') {
+          navigate('/dashboard')
+        }
       }, 1000)
     } catch (err) {
       setError(err.message || "Login failed. Please check your credentials and try again.")
