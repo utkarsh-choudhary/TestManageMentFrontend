@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
@@ -16,44 +15,36 @@ import {
   FileText,
 } from "lucide-react"
 
-import { getUserAllInfo } from "../../api/test"
-
-// Mock user data
-const mockUser = {
-  id: "user-123",
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "+1 (555) 123-4567",
-}
-
-
-
-// Mock tests data with current dates
-
+import { getUserAllInfo, getUserProfile } from "../../api/test"
 
 export default function UserDashboard() {
   const [tests, setTests] = useState([])
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [userData, setUserData] = useState(null)
   const navigate = useNavigate()
 
-
-async  function handleGetUserData(){
-
-      try{
-
-        const response=await getUserAllInfo();
-
-        if(response.status==200){
-            setTests(response.data.tests);
-        }
-        console.log(response);
-
-
-      }catch(error){
-        console.log("ERROR");
-        console.log(error);
+  async function handleGetUserData() {
+    try {
+      const response = await getUserAllInfo()
+      if (response.status == 200) {
+        setTests(response.data.tests)
       }
+      console.log(response)
+    } catch (error) {
+      console.log("ERROR")
+      console.log(error)
+    }
+  }
 
+  async function handleGetUserProfile() {
+    try {
+      const response = await getUserProfile()
+      if (response.status === 200) {
+        setUserData(response.data)
+      }
+    } catch (error) {
+      console.log("Error fetching user profile:", error)
+    }
   }
 
   // Update current time every minute
@@ -65,11 +56,10 @@ async  function handleGetUserData(){
     return () => clearInterval(timer)
   }, [])
 
-  useEffect(()=>{
-
-    handleGetUserData();
-
-  },[])
+  useEffect(() => {
+    handleGetUserData()
+    handleGetUserProfile()
+  }, [])
 
   // Calculate time remaining for a test (3 days from creation)
   const calculateTimeRemaining = (createdAt) => {
@@ -163,7 +153,9 @@ async  function handleGetUserData(){
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500">Welcome back,</p>
-              <p className="text-lg font-semibold text-gray-900">{mockUser.name}</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
+              </p>
             </div>
           </div>
         </div>
@@ -178,21 +170,23 @@ async  function handleGetUserData(){
               <User size={20} className="text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Full Name</p>
-                <p className="font-medium text-gray-900">{mockUser.name}</p>
+                <p className="font-medium text-gray-900">
+                  {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Mail size={20} className="text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium text-gray-900">{mockUser.email}</p>
+                <p className="font-medium text-gray-900">{userData?.email || 'Loading...'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Phone size={20} className="text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Phone</p>
-                <p className="font-medium text-gray-900">{mockUser.phone}</p>
+                <p className="font-medium text-gray-900">{userData?.phone || '23456734765'}</p>
               </div>
             </div>
           </div>

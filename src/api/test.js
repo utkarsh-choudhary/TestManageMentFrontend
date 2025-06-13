@@ -58,3 +58,14 @@ export const getAllTests=async()=>{
         return error;
     }
 }
+
+
+export const getUserProfile= async()=>{
+    try {
+        const response=await apiInstance.get("/api/users/get-user-details")
+        return response;
+    } catch (error) {
+        console.log(error)
+        return error;
+    }
+}
