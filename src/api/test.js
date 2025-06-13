@@ -69,3 +69,17 @@ export const getUserProfile= async()=>{
         return error;
     }
 }
+
+export const submitTest=async(data)=>{
+    try{
+
+        const response=await apiInstance.post("/api/submit-test",data);
+
+        return response;
+
+    }catch(error){
+
+        console.log(error);
+        return error;
+    }
+}

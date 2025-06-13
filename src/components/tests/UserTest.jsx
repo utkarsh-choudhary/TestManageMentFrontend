@@ -21,7 +21,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 
-import { getTest } from "../../api/test"
+import { getTest ,submitTest} from "../../api/test"
 
 // Mock test data
 const mockTest = {
@@ -185,24 +185,26 @@ export default function CandidateTestPage() {
     setCurrentQuestionIndex(index)
   }
 
-  const handleSubmitTest = () => {
+  const handleSubmitTest = async() => {
     if (confirmSubmit) {
       // Prepare final answers array with question IDs and answers
       const finalAnswers = answers.map((answer, index) => {
         const question = test.questions[index]
         return {
-          questionId: question.id,
-          questionIndex: index,
-          answer: answer,
-          type: question?.type,
+          question: question._id,
+          answer: answer,   
         }
       })
 
+      const response=await submitTest({testId:test._id, answers: finalAnswers})
       // Here you would typically send the answers to your backend
-      console.log("Test submitted:", {
-        candidateInfo,
-        answers: finalAnswers,
-      })
+     console.log("Submitting test with answers:", finalAnswers)
+      console.log("Response:", response)
+      if (response.status !== 200) {
+        setError("Failed to submit test. Please try again later.")
+        return  
+      }   
+
       setTestSubmitted(true)
     } else {
       setConfirmSubmit(true)
