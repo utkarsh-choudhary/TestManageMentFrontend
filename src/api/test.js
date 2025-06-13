@@ -43,3 +43,18 @@ export const getUserAllInfo=async()=>{
         console.log(error);
       }
 }
+
+
+export const getAllTests=async()=>{
+    try{
+
+        const response=await apiInstance.get("/api/get-all-tests");
+
+        return response;
+
+    }catch(error){
+
+        console.log(error);
+        return error;
+    }
+}

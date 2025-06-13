@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Eye, Calendar, Users, Clock, BarChart3, Search, Filter } from "lucide-react"
+import { getAllTests } from "../../api/test"
 
 // Mock data for tests
 const mockTests = [
@@ -111,6 +112,28 @@ export default function AllTests() {
     setSelectedTest(test)
     setShowDetailModal(true)
   }
+
+ async function handleGetAllTests() {
+
+  try{
+    const response = await getAllTests();
+    if (response.status === 200 && response.data) {
+      setTests(response.data.tests);
+    } else {
+      console.error("No data found");
+    }
+
+  }catch(error){
+    console.error("Error fetching tests:", error)     
+  }
+
+
+  }
+
+  useEffect(() => { 
+   handleGetAllTests();
+
+  },[]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">

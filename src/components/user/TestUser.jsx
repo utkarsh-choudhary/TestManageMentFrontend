@@ -29,70 +29,7 @@ const mockUser = {
 
 
 // Mock tests data with current dates
-const mockTests = [
-  {
-    id: "test-001",
-    title: "React Developer Assessment",
-    position: "Senior React Developer",
-    company: "TechCorp Inc.",
-    totalQuestions: 15,
-    duration: 45, // in minutes
-    totalMarks: 100,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago - should be pending
-    status: "pending",
-    description: "Comprehensive assessment covering React fundamentals, hooks, and advanced concepts.",
-  },
-  {
-    id: "test-002",
-    title: "JavaScript Fundamentals Test",
-    position: "Frontend Developer",
-    company: "WebSolutions Ltd.",
-    totalQuestions: 20,
-    duration: 60,
-    totalMarks: 150,
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago - should be pending
-    status: "pending",
-    description: "Test covering ES6+, async programming, DOM manipulation, and modern JavaScript concepts.",
-  },
-  {
-    id: "test-003",
-    title: "Full Stack Developer Challenge",
-    position: "Full Stack Developer",
-    company: "StartupXYZ",
-    totalQuestions: 25,
-    duration: 90,
-    totalMarks: 200,
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago - should be pending
-    status: "pending",
-    description: "Complete assessment including frontend, backend, database, and system design questions.",
-  },
-  {
-    id: "test-004",
-    title: "Node.js Backend Assessment",
-    position: "Backend Developer",
-    company: "DataFlow Systems",
-    totalQuestions: 18,
-    duration: 75,
-    totalMarks: 120,
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago - should be missed
-    status: "completed",
-    description: "Assessment focusing on Node.js, Express, databases, and API development.",
-    completedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    score: 95,
-  },
-  {
-    id: "test-005",
-    title: "Python Developer Test",
-    position: "Python Developer",
-    company: "AI Solutions",
-    totalQuestions: 12,
-    duration: 50,
-    totalMarks: 80,
-    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago - should be missed
-    status: "pending",
-    description: "Python programming test covering data structures, algorithms, and web frameworks.",
-  },
-]
+
 
 export default function UserDashboard() {
   const [tests, setTests] = useState([])

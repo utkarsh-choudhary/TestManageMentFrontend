@@ -50,7 +50,7 @@ export default function Sidebar({ activeTab, setActiveTab, sidebarOpen, setSideb
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                className={`w-full flex items-center space-x-3 ${ sidebarOpen ? "px-4 py-2" : "p-2"} rounded-xl transition-all duration-200 ${
                   isActive
                     ? "bg-blue-600 text-white shadow-lg transform scale-105"
                     : "text-gray-700 hover:bg-gray-100 hover:scale-105"

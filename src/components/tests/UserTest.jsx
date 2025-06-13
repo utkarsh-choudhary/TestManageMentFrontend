@@ -1,8 +1,25 @@
 
-
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { Clock, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, User, Mail, Phone, Briefcase, Flag, HelpCircle, CheckSquare, CodeIcon, FileText, AlertTriangle, XCircle, ExternalLink } from 'lucide-react'
+import {
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  AlertCircle,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  Flag,
+  HelpCircle,
+  CheckSquare,
+  CodeIcon,
+  FileText,
+  AlertTriangle,
+  XCircle,
+  ExternalLink,
+} from "lucide-react"
 
 import { getTest } from "../../api/test"
 
@@ -32,7 +49,7 @@ export default function CandidateTestPage() {
     position: "",
   })
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState({})
+  const [answers, setAnswers] = useState([])
   const [flaggedQuestions, setFlaggedQuestions] = useState([])
   const [timeRemaining, setTimeRemaining] = useState(test.duration * 60) // in seconds
   const [testStarted, setTestStarted] = useState(false)
@@ -110,6 +127,14 @@ export default function CandidateTestPage() {
     handleGetTest()
   }, [id])
 
+  useEffect(() => {
+    if (test.questions && test.questions.length > 0) {
+      // Initialize answers array with empty values for each question
+      const initialAnswers = new Array(test.questions.length).fill("")
+      setAnswers(initialAnswers)
+    }
+  }, [test.questions])
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
@@ -127,8 +152,12 @@ export default function CandidateTestPage() {
     }
   }
 
-  const handleAnswerChange = (questionId, answer) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }))
+  const handleAnswerChange = (questionIndex, answer) => {
+    setAnswers((prev) => {
+      const newAnswers = [...prev]
+      newAnswers[questionIndex] = answer
+      return newAnswers
+    })
   }
 
   const handleFlagQuestion = (questionId) => {
@@ -139,9 +168,6 @@ export default function CandidateTestPage() {
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < test.questions.length - 1) {
-      // Save current answer before moving to next question
-      const currentQuestion = test.questions[currentQuestionIndex]
-      
       // Move to next question
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     }
@@ -149,18 +175,12 @@ export default function CandidateTestPage() {
 
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      // Save current answer before moving to previous question
-      const currentQuestion = test.questions[currentQuestionIndex]
-      
       // Move to previous question
       setCurrentQuestionIndex(currentQuestionIndex - 1)
     }
   }
 
   const handleJumpToQuestion = (index) => {
-    // Save current answer before jumping to another question
-    const currentQuestion = test.questions[currentQuestionIndex]
-    
     // Jump to selected question
     setCurrentQuestionIndex(index)
   }
@@ -168,19 +188,20 @@ export default function CandidateTestPage() {
   const handleSubmitTest = () => {
     if (confirmSubmit) {
       // Prepare final answers array with question IDs and answers
-      const finalAnswers = Object.keys(answers).map(questionId => {
-        const question = test.questions.find(q => q.id === questionId)
+      const finalAnswers = answers.map((answer, index) => {
+        const question = test.questions[index]
         return {
-          questionId,
-          answer: answers[questionId],
-          type: question?.type
+          questionId: question.id,
+          questionIndex: index,
+          answer: answer,
+          type: question?.type,
         }
       })
 
       // Here you would typically send the answers to your backend
       console.log("Test submitted:", {
         candidateInfo,
-        answers: finalAnswers
+        answers: finalAnswers,
       })
       setTestSubmitted(true)
     } else {
@@ -189,9 +210,8 @@ export default function CandidateTestPage() {
   }
 
   const getQuestionStatus = (index) => {
-    const questionId = test.questions[index].id
-    if (flaggedQuestions.includes(questionId)) return "flagged"
-    if (answers[questionId]) return "answered"
+    if (flaggedQuestions.includes(test.questions[index].id)) return "flagged"
+    if (answers[index] && answers[index].toString().trim() !== "") return "answered"
     return "unanswered"
   }
 
@@ -214,7 +234,7 @@ export default function CandidateTestPage() {
     }
 
     const question = test.questions[currentQuestionIndex]
-    const answer = answers[question.id] || ""
+    const answer = answers[currentQuestionIndex] || ""
 
     switch (question.type) {
       case "mcq":
@@ -230,7 +250,7 @@ export default function CandidateTestPage() {
                     name={`question-${question.id}`}
                     value={option}
                     checked={answer === option}
-                    onChange={() => handleAnswerChange(question.id, option)}
+                    onChange={() => handleAnswerChange(currentQuestionIndex, option)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <label htmlFor={`option-${index}`} className="ml-3 block text-gray-700">
@@ -247,7 +267,7 @@ export default function CandidateTestPage() {
             <div className="text-lg font-medium text-gray-900">{question.question}</div>
             <textarea
               value={answer}
-              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+              onChange={(e) => handleAnswerChange(currentQuestionIndex, e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               rows={8}
               placeholder="Type your answer here..."
@@ -260,7 +280,7 @@ export default function CandidateTestPage() {
             <div className="text-lg font-medium text-gray-900">{question.question}</div>
             <textarea
               value={answer}
-              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+              onChange={(e) => handleAnswerChange(currentQuestionIndex, e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
               rows={12}
               placeholder="// Write your code here..."
@@ -584,13 +604,16 @@ export default function CandidateTestPage() {
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
                   <span>Progress</span>
                   <span>
-                    {Object.keys(answers).length}/{test.questions.length}
+                    {answers.filter((answer) => answer && answer.toString().trim() !== "").length}/
+                    {test.questions.length}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${(Object.keys(answers).length / test.questions.length) * 100}%` }}
+                    style={{
+                      width: `${(answers.filter((answer) => answer && answer.toString().trim() !== "").length / test.questions.length) * 100}%`,
+                    }}
                   ></div>
                 </div>
               </div>
@@ -670,8 +693,8 @@ export default function CandidateTestPage() {
               <AlertCircle size={48} className="mx-auto text-yellow-500 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900">Submit Test?</h3>
               <p className="text-gray-600 mt-2">
-                You have answered {Object.keys(answers).length} out of {test.questions.length} questions. Are you sure
-                you want to submit your test?
+                You have answered {answers.filter((answer) => answer && answer.toString().trim() !== "").length} out of{" "}
+                {test.questions.length} questions. Are you sure you want to submit your test?
               </p>
             </div>
 
