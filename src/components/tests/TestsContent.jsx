@@ -3,6 +3,7 @@ import { Settings } from "lucide-react"
 import TestCreationForm from "./CreateTest.jsx"
 import AllTests from "./AllTest.jsx"
 import Analytics from "./Analytics.jsx"
+import Assign from "./Assign.jsx"
 
 export default function TestManagementDashboard() {
   const [activeTab, setActiveTab] = useState("create")
@@ -10,6 +11,7 @@ export default function TestManagementDashboard() {
   const tabs = [
     { id: "create", label: "Create Test" },
     { id: "all-tests", label: "All Tests" },
+    {id:"assign-test", label:"Assign Test" },
     { id: "analytics", label: "Analytics" },
   ]
 
@@ -21,6 +23,8 @@ export default function TestManagementDashboard() {
         return <AllTests />
       case "analytics":
         return <Analytics />
+      case "assign-test":
+        return <Assign />
       default:
         return <TestCreationForm />
     }

@@ -1,146 +1,184 @@
 import { useEffect, useState } from "react"
-import { Eye, Calendar, Users, Clock, BarChart3, Search, Filter } from "lucide-react"
-import { getAllTests } from "../../api/test"
+import {getAllTests} from "../../api/test"
+import {
+  Eye,
+  Calendar,
+  Users,
+  Clock,
+  BarChart3,
+  Search,
+  X,
+  CheckCircle,
+  Code,
+  Edit3,
+  FileText,
+  Target,
+} from "lucide-react"
 
-// Mock data for tests
-const mockTests = [
+// Update the dummy data to match your API response
+const dummyTemplates = [
   {
-    id: 1,
-    candidateName: "John Doe",
-    position: "React Developer",
-    email: "john@example.com",
-    createdDate: "2024-01-15",
-    status: "completed",
-    score: 85,
-    totalMarks: 100,
-    duration: "45 min",
-    questionsAnswered: 10,
-    totalQuestions: 10,
+    _id: "684c12f91b8e3005bae574df",
+    name: "JUNIOR REACT JS DEVELOPER",
+    position: "React js developer",
+    questions: [
+      {
+        _id: "684c12f81b8e3005bae574c7",
+        type: "mcq",
+        question: "What is React primarily used for?",
+        options: ["Building mobile apps", "Server-side processing", "Building user interfaces", "Data analysis"],
+      },
+      {
+        _id: "684c12f81b8e3005bae574c8",
+        type: "mcq",
+        question: "Which feature of React allows it to efficiently update the UI?",
+        options: ["Real DOM", "Virtual DOM", "Shadow DOM", "Document Fragment"],
+      },
+      // ... other questions
+    ],
+    maxScore: 68,
+    testDuration: 40,
+    createdBy: "684ab4abd64a80ab7e81a15a",
+    createdAt: "2025-06-13T12:00:57.190Z",
+    __v: 0,
   },
   {
-    id: 2,
-    candidateName: "Jane Smith",
-    position: "Full Stack Developer",
-    email: "jane@example.com",
-    createdDate: "2024-01-14",
-    status: "in-progress",
-    score: 0,
-    totalMarks: 120,
-    duration: "30 min",
-    questionsAnswered: 6,
-    totalQuestions: 12,
+    _id: "684d595cd1bf925132158e50",
+    name: "gerer",
+    position: "ger",
+    questions: [
+      {
+        _id: "684d595bd1bf925132158e4a",
+        type: "coding",
+        question: "dfsds",
+      },
+      {
+        _id: "684d595bd1bf925132158e4b",
+        type: "coding",
+        question: "fessdfsd",
+      },
+      {
+        _id: "684d595bd1bf925132158e4c",
+        type: "coding",
+        question: "efwffewwe",
+      },
+    ],
+    maxScore: 0,
+    testDuration: 60,
+    createdBy: "684ab4abd64a80ab7e81a15a",
+    createdAt: "2025-06-14T11:13:32.055Z",
+    __v: 0,
   },
   {
-    id: 3,
-    candidateName: "Mike Johnson",
-    position: "Frontend Developer",
-    email: "mike@example.com",
-    createdDate: "2024-01-13",
-    status: "not-started",
-    score: 0,
-    totalMarks: 80,
-    duration: "0 min",
-    questionsAnswered: 0,
-    totalQuestions: 8,
-  },
-  {
-    id: 4,
-    candidateName: "Sarah Wilson",
-    position: "React Developer",
-    email: "sarah@example.com",
-    createdDate: "2024-01-12",
-    status: "completed",
-    score: 92,
-    totalMarks: 100,
-    duration: "38 min",
-    questionsAnswered: 10,
-    totalQuestions: 10,
-  },
-  {
-    id: 5,
-    candidateName: "David Brown",
-    position: "Backend Developer",
-    email: "david@example.com",
-    createdDate: "2024-01-11",
-    status: "completed",
-    score: 78,
-    totalMarks: 90,
-    duration: "52 min",
-    questionsAnswered: 9,
-    totalQuestions: 9,
+    _id: "684fc53109bcfbfd935c008f",
+    name: "FIRST ROUND",
+    position: "React js developer",
+    questions: [
+      {
+        _id: "684fc53109bcfbfd935c0089",
+        type: "coding",
+        question: "iefwiuwefih",
+      },
+      {
+        _id: "684fc53109bcfbfd935c008a",
+        type: "coding",
+        question: "efwfijewfewbhewfbuh",
+      },
+      {
+        _id: "684fc53109bcfbfd935c008b",
+        type: "coding",
+        question: "fvefwefwhufewih",
+      },
+    ],
+    maxScore: 0,
+    testDuration: 90,
+    createdBy: "684ab4abd64a80ab7e81a15a",
+    createdAt: "2025-06-16T07:18:09.907Z",
+    __v: 0,
   },
 ]
 
+// Update state and component logic
 export default function AllTests() {
-  const [tests, setTests] = useState(mockTests)
+  const [templates, setTemplates] = useState(dummyTemplates)
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedTest, setSelectedTest] = useState(null)
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const filteredTests = tests.filter((test) => {
+  const filteredTemplates = templates.filter((template) => {
     const matchesSearch =
-      test.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || test.status === statusFilter
-    return matchesSearch && matchesStatus
+      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.position.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesSearch
   })
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800"
-      case "in-progress":
-        return "bg-yellow-100 text-yellow-800"
-      case "not-started":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getScoreBarColor = (score, totalMarks) => {
-    const percentage = (score / totalMarks) * 100
-    if (percentage >= 80) return "bg-green-500"
-    if (percentage >= 60) return "bg-yellow-500"
-    if (percentage >= 40) return "bg-orange-500"
-    return "bg-red-500"
-  }
-
-  const handleViewDetails = (test) => {
-    setSelectedTest(test)
+  const handleViewDetails = (template) => {
+    setSelectedTemplate(template)
     setShowDetailModal(true)
   }
 
- async function handleGetAllTests() {
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not available"
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
 
-  try{
-    const response = await getAllTests();
-    if (response.status === 200 && response.data) {
-      setTests(response.data.tests);
-    } else {
-      console.error("No data found");
+
+
+  const handleGetTestTemplates=async()=>{
+      try{
+
+        const response=await getAllTests();
+
+        if(response.status===200){
+          setTemplates(response.data.templates);
+        
+        }
+
+      }catch(error){
+        console.log("ERROR",error.message);
+
+      }finally{
+           setLoading(false);
+      }
+
+  }
+  useEffect(() => {
+
+    handleGetTestTemplates();
+  }, [])
+
+  const getQuestionTypeIcon = (type) => {
+    switch (type) {
+      case "mcq":
+        return <CheckCircle size={16} className="text-green-600" />
+      case "coding":
+        return <Code size={16} className="text-purple-600" />
+      case "theory":
+        return <Edit3 size={16} className="text-orange-600" />
+      default:
+        return <FileText size={16} className="text-gray-600" />
     }
-
-  }catch(error){
-    console.error("Error fetching tests:", error)     
   }
 
-
+  const getQuestionTypeCounts = (questions) => {
+    const counts = { mcq: 0, theory: 0, coding: 0 }
+    questions.forEach((question) => {
+      counts[question.type]++
+    })
+    return counts
   }
-
-  useEffect(() => { 
-   handleGetAllTests();
-
-  },[]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">All Tests</h1>
-        <p className="text-gray-600">Manage and monitor all test submissions</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Test Templates</h1>
+        <p className="text-gray-600">Manage and review all available test templates</p>
       </div>
 
       {/* Filters */}
@@ -151,188 +189,167 @@ export default function AllTests() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Search by name, position, or email..."
+                placeholder="Search by test name or position..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Filter size={16} className="text-gray-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="completed">Completed</option>
-              <option value="in-progress">In Progress</option>
-              <option value="not-started">Not Started</option>
-            </select>
-          </div>
         </div>
       </div>
 
-      {/* Tests List */}
+      {/* Templates List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Test Results ({filteredTests.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Available Templates ({filteredTemplates.length})</h2>
         </div>
 
-        <div className="divide-y divide-gray-200">
-          {filteredTests.map((test) => (
-            <div key={test.id} className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">{test.candidateName}</h3>
-                    <p className="text-sm text-gray-500">
-                      {test.position} • {test.email}
-                    </p>
-                  </div>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(test.status)}`}
-                  >
-                    {test.status.replace("-", " ").toUpperCase()}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleViewDetails(test)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-all"
-                >
-                  <Eye size={16} />
-                  <span>View Details</span>
-                </button>
-              </div>
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-500">Loading templates...</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredTemplates.map((template) => {
+              const questionCounts = getQuestionTypeCounts(template.questions || [])
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Calendar size={16} />
-                  <span>{test.createdDate}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Clock size={16} />
-                  <span>{test.duration}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Users size={16} />
-                  <span>
-                    {test.questionsAnswered}/{test.totalQuestions} questions
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <BarChart3 size={16} />
-                  <span>
-                    {test.score}/{test.totalMarks} points
-                  </span>
-                </div>
-              </div>
+              return (
+                <div key={template._id} className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">{template.name}</h3>
+                        <p className="text-sm text-gray-500">{template.position}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleViewDetails(template)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-all"
+                    >
+                      <Eye size={16} />
+                      <span>View Details</span>
+                    </button>
+                  </div>
 
-              {/* Score Bar */}
-              {test.status === "completed" && (
-                <div className="mb-2">
-                  <div className="flex justify-between text-sm text-gray-600 mb-1">
-                    <span>Score</span>
-                    <span>{Math.round((test.score / test.totalMarks) * 100)}%</span>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <Calendar size={16} />
+                      <span>{formatDate(template.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <Clock size={16} />
+                      <span>{template.testDuration} min</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <Users size={16} />
+                      <span>{template.questions.length} questions</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <BarChart3 size={16} />
+                      <span>{template.maxScore} points</span>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${getScoreBarColor(test.score, test.totalMarks)}`}
-                      style={{ width: `${(test.score / test.totalMarks) * 100}%` }}
-                    ></div>
+
+                  {/* Question Type Breakdown */}
+                  <div className="flex items-center space-x-4 text-sm">
+                    <span className="text-green-600 font-medium">{questionCounts.mcq} MCQ</span>
+                    <span className="text-orange-600 font-medium">{questionCounts.theory} Theory</span>
+                    <span className="text-purple-600 font-medium">{questionCounts.coding} Coding</span>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Detail Modal */}
-      {showDetailModal && selectedTest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      {showDetailModal && selectedTemplate && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Test Details</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Test Template Details</h3>
               <button onClick={() => setShowDetailModal(false)} className="text-gray-500 hover:text-gray-700">
-                ×
+                <X size={24} />
               </button>
             </div>
 
             <div className="space-y-6">
-              {/* Candidate Info */}
+              {/* Template Info */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Candidate Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                  <FileText size={16} className="mr-2" />
+                  Template Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Name:</span>
-                    <p className="font-medium">{selectedTest.candidateName}</p>
+                    <span className="text-gray-500">Test Name:</span>
+                    <p className="font-medium">{selectedTemplate.name}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Position:</span>
-                    <p className="font-medium">{selectedTest.position}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Email:</span>
-                    <p className="font-medium">{selectedTest.email}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Test Date:</span>
-                    <p className="font-medium">{selectedTest.createdDate}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Test Performance */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Test Performance</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Status:</span>
-                    <p
-                      className={`font-medium ${selectedTest.status === "completed" ? "text-green-600" : selectedTest.status === "in-progress" ? "text-yellow-600" : "text-gray-600"}`}
-                    >
-                      {selectedTest.status.replace("-", " ").toUpperCase()}
-                    </p>
+                    <p className="font-medium">{selectedTemplate.position}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Duration:</span>
-                    <p className="font-medium">{selectedTest.duration}</p>
+                    <p className="font-medium">{selectedTemplate.testDuration} minutes</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Questions Answered:</span>
-                    <p className="font-medium">
-                      {selectedTest.questionsAnswered}/{selectedTest.totalQuestions}
-                    </p>
+                    <span className="text-gray-500">Total Questions:</span>
+                    <p className="font-medium">{selectedTemplate.questions.length}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Score:</span>
-                    <p className="font-medium">
-                      {selectedTest.score}/{selectedTest.totalMarks} (
-                      {Math.round((selectedTest.score / selectedTest.totalMarks) * 100)}%)
-                    </p>
+                    <span className="text-gray-500">Max Score:</span>
+                    <p className="font-medium">{selectedTemplate.maxScore} points</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Created:</span>
+                    <p className="font-medium">{formatDate(selectedTemplate.createdAt)}</p>
                   </div>
                 </div>
+              </div>
 
-                {selectedTest.status === "completed" && (
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>Overall Performance</span>
-                      <span>{Math.round((selectedTest.score / selectedTest.totalMarks) * 100)}%</span>
+              {/* Questions Section */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                  <Target size={16} className="mr-2" />
+                  Questions ({selectedTemplate.questions.length})
+                </h4>
+
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {selectedTemplate.questions.map((question, index) => (
+                    <div key={question._id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        {getQuestionTypeIcon(question.type)}
+                        <span className="text-sm font-medium">Question {index + 1}</span>
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded capitalize">
+                          {question.type}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-gray-700 mb-3 font-medium">{question.question}</p>
+
+                      {/* For MCQ questions - show options */}
+                      {question.type === "mcq" && question.options && (
+                        <div className="space-y-2">
+                          {question.options.map((option, optionIndex) => (
+                            <div key={optionIndex} className="p-2 rounded text-sm bg-gray-50 border border-gray-200">
+                              <span>
+                                {String.fromCharCode(65 + optionIndex)}. {option}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div
-                        className={`h-3 rounded-full ${getScoreBarColor(selectedTest.score, selectedTest.totalMarks)}`}
-                        style={{ width: `${(selectedTest.score / selectedTest.totalMarks) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-3 pt-4 border-t">
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-all"
@@ -340,7 +357,7 @@ export default function AllTests() {
                   Close
                 </button>
                 <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all">
-                  Download Report
+                  Use Template
                 </button>
               </div>
             </div>

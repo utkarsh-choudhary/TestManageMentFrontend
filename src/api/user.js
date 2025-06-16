@@ -89,3 +89,18 @@ export const updateUserRole = async (userId, newRole) => {
 }
 
 
+export const getAllUsers=()=>{
+
+    try{
+
+        const response=apiInstance.get("/api/users/get-all-users");
+        return response;
+
+    }catch(error){
+         console.log("ERROR");
+         console.log(error);    
+         
+    }
+    
+
+}

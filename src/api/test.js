@@ -48,7 +48,7 @@ export const getUserAllInfo=async()=>{
 export const getAllTests=async()=>{
     try{
 
-        const response=await apiInstance.get("/api/get-all-tests");
+        const response=await apiInstance.get("/api/get-all-test");
 
         return response;
 
@@ -83,3 +83,65 @@ export const submitTest=async(data)=>{
         return error;
     }
 }
+
+ 
+export const getTests=async(id)=>{
+    try{
+
+        const response=await apiInstance.get(`/api/get-test-results/${id}`);
+
+        return response;
+
+    }catch(error){
+
+        console.log(error);
+        return error;
+    }
+}   
+
+export const assignTest=async(id)=>{
+    try{
+
+        const response=await apiInstance.get(`/api/get-test-analytics/${id}`);
+
+        return response;
+
+    }catch(error){
+
+        console.log(error);
+        return error;
+    }
+}
+  
+
+
+export const getAllTestsAssigned=async()=>{
+    try{    
+
+        const response=await apiInstance.get("/api/get-all-assign-test");
+
+        return response;    
+
+    }catch(error){
+        console.log(error);
+        return error;
+    }
+}
+
+
+export const assignTests=async(data)=>{
+    try{    
+
+        const response=await apiInstance.post("/api/assign-test",data);     
+
+        return response;
+
+    }catch(error){
+        console.log(error);
+        return error;
+    }
+
+
+}
+
+

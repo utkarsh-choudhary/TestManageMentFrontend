@@ -1,30 +1,12 @@
-"use client"
-
 import { useState } from "react"
-import {
-  X,
-  Plus,
-  FileText,
-  Code,
-  CheckCircle,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
-  Save,
-  Edit3,
-  Eye,
-  Trash2,
-  Edit,
-} from "lucide-react"
+import { X, Plus, FileText, Code, CheckCircle, Clock, Briefcase, Save, Edit3, Eye, Trash2, Edit } from "lucide-react"
 import { createTest } from "../../api/test"
 
 export default function TestCreationForm() {
   const [testData, setTestData] = useState({
     name: "",
-    email: "",
-    phone: "",
     position: "",
+    testDuration: 60, // in minutes
     questions: [],
   })
 
@@ -42,9 +24,7 @@ export default function TestCreationForm() {
     correctAnswer: "",
   })
 
-  
-
-  const isBasicInfoComplete = testData.name && testData.email && testData.phone && testData.position
+  const isBasicInfoComplete = testData.name && testData.position && testData.testDuration > 0
   const canSaveTest = testData.questions.length >= 3
 
   const handleBasicInfoChange = (field, value) => {
@@ -129,31 +109,32 @@ export default function TestCreationForm() {
     })
   }
 
-  const handleSaveTest =async () => {
+  const handleSaveTest = async () => {
     if (canSaveTest) {
-      console.log("Test Data:", JSON.stringify(testData, null, 2))
-    
+      // Format data as requested: { name, position, questions, testDuration }
+      const formattedTestData = {
+        name: testData.name,
+        position: testData.position,
+        questions: testData.questions,
+        testDuration: testData.testDuration,
+      }
 
-   const response= await createTest(testData);
+      console.log("Test Data:", JSON.stringify(formattedTestData, null, 2))
 
-   if(response.status===201){
-    alert("Test created and saved successfully!")
-    setTestData({
-        name: "",
-        email: "",
-        phone: "",
-        position: "",
-        questions: [],
-      });
+      const response = await createTest(formattedTestData)
 
-   }else{
-    console.log(response);
-    alert("something went wrong")
-   }
-
-   
-  
-       
+      if (response.status === 201) {
+        alert("Test created and saved successfully!")
+        setTestData({
+          name: "",
+          position: "",
+          testDuration: 60,
+          questions: [],
+        })
+      } else {
+        console.log(response)
+        alert("Something went wrong")
+      }
     }
   }
 
@@ -192,56 +173,28 @@ export default function TestCreationForm() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Test Configuration</h2>
-              <p className="text-sm text-gray-500 mt-1">Configure basic test settings and candidate information</p>
+              <p className="text-sm text-gray-500 mt-1">Configure basic test settings and information</p>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
-                    <User size={16} className="text-gray-400" />
-                    <span>Candidate Name</span>
+                    <FileText size={16} className="text-gray-400" />
+                    <span>Test Name</span>
                   </label>
                   <input
                     type="text"
                     value={testData.name}
                     onChange={(e) => handleBasicInfoChange("name", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="Enter candidate's full name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
-                    <Mail size={16} className="text-gray-400" />
-                    <span>Email Address</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={testData.email}
-                    onChange={(e) => handleBasicInfoChange("email", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="candidate@example.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
-                    <Phone size={16} className="text-gray-400" />
-                    <span>Phone Number</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={testData.phone}
-                    onChange={(e) => handleBasicInfoChange("phone", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="Enter test name (e.g., React Developer Assessment)"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
                     <Briefcase size={16} className="text-gray-400" />
-                    <span>Position Applied</span>
+                    <span>Position</span>
                   </label>
                   <input
                     type="text"
@@ -249,6 +202,22 @@ export default function TestCreationForm() {
                     onChange={(e) => handleBasicInfoChange("position", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     placeholder="e.g., Senior React Developer"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <Clock size={16} className="text-gray-400" />
+                    <span>Test Duration (minutes)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={testData.testDuration}
+                    onChange={(e) => handleBasicInfoChange("testDuration",Math.min( Number.parseInt(e.target.value)||0,90 ))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    placeholder="Enter duration in minutes"
+                    min="30"
+                    max="90"
                   />
                 </div>
               </div>
@@ -401,6 +370,10 @@ export default function TestCreationForm() {
               <h3 className="text-sm font-semibold text-gray-900">Test Summary</h3>
             </div>
             <div className="p-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Test Duration:</span>
+                <span className="font-medium text-gray-900">{testData.testDuration} min</span>
+              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total Questions:</span>
                 <span className="font-medium text-gray-900">{testData.questions.length}</span>
