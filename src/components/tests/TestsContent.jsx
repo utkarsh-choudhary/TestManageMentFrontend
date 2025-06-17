@@ -4,21 +4,28 @@ import TestCreationForm from "./CreateTest.jsx"
 import AllTests from "./AllTest.jsx"
 import Analytics from "./Analytics.jsx"
 import Assign from "./Assign.jsx"
+import TestDashboard from "./TestDashboar.jsx"
 
 export default function TestManagementDashboard() {
   const [activeTab, setActiveTab] = useState("create")
 
   const tabs = [
     { id: "create", label: "Create Test" },
+    {
+      id:"test-dashboard",label:"Test Dashboard"
+    },
     { id: "all-tests", label: "All Tests" },
     {id:"assign-test", label:"Assign Test" },
     { id: "analytics", label: "Analytics" },
+  
   ]
 
   const renderContent = () => {
     switch (activeTab) {
       case "create":
         return <TestCreationForm />
+      case "test-dashboard":
+         return <TestDashboard/>
       case "all-tests":
         return <AllTests />
       case "analytics":

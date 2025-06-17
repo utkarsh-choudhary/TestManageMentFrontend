@@ -32,16 +32,13 @@ export const getTest=async(id)=>{
 }
 
 export const getUserAllInfo=async()=>{
-      try{
-
-        const response=await apiInstance.get("api/get-user-tests");
+    try {
+        const response = await apiInstance.get("/api/get-assign-test");
         return response;
-
-      }catch(error){
-
-        console.log("ERROR");
-        console.log(error);
-      }
+    } catch (error) {
+        console.error("Error in getUserAllInfo:", error);
+        return error;
+    }
 }
 
 
@@ -70,16 +67,21 @@ export const getUserProfile= async()=>{
     }
 }
 
-export const submitTest=async(data)=>{
-    try{
+export const submitTest = async (data) => {
+    try {
+        // Transform the data to match the required format
+        const requestData = {
+            testAssignmentId: data.assignmentId,
+            candidateResponse: data.answers.map(answer => ({
+                question: answer.questionId,
+                answer: answer.answer
+            }))
+        };
 
-        const response=await apiInstance.post("/api/submit-test",data);
-
+        const response = await apiInstance.post("/api/submit-test", requestData);
         return response;
-
-    }catch(error){
-
-        console.log(error);
+    } catch (error) {
+        console.error("Error in submitTest:", error);
         return error;
     }
 }
@@ -142,6 +144,18 @@ export const assignTests=async(data)=>{
     }
 
 
+}
+
+export const getAssignedTest = async () => {
+    try {
+        console.log("Calling get-assign-test API...");
+        const response = await apiInstance.get("/api/get-assign-test");
+        console.log("API Response:", response);
+        return response;
+    } catch (error) {
+        console.error("Error in getAssignedTest:", error);
+        return error;
+    }
 }
 
 

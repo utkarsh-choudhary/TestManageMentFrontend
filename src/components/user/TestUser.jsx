@@ -2,17 +2,17 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   Clock,
-  Calendar,
   User,
   Mail,
   Phone,
   Briefcase,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   Play,
   Timer,
   FileText,
+  LogOut,
+  Loader2,
 } from "lucide-react"
 
 import { getUserAllInfo, getUserProfile } from "../../api/test"
@@ -21,18 +21,28 @@ export default function UserDashboard() {
   const [tests, setTests] = useState([])
   const [currentTime, setCurrentTime] = useState(new Date())
   const [userData, setUserData] = useState(null)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    // Simulate a small delay for better UX
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    localStorage.removeItem("token")
+    localStorage.removeItem("role")
+    navigate("/")
+  }
 
   async function handleGetUserData() {
     try {
       const response = await getUserAllInfo()
-      if (response.status == 200) {
-        setTests(response.data.tests)
+      if (response && response.data && response.data.assignments) {
+        setTests(response.data.assignments)
       }
-      console.log(response)
+      console.log("User data response:", response)
     } catch (error) {
-      console.log("ERROR")
-      console.log(error)
+      console.error("Error fetching user data:", error)
     }
   }
 
@@ -137,25 +147,70 @@ export default function UserDashboard() {
     return parts.length > 0 ? parts.join(" ") : "Less than 1m"
   }
 
-  const pendingTests = tests.filter((test) => test.status === "pending")
-  const completedTests = tests.filter((test) => test.status === "completed")
-  const missedTests = tests.filter((test) => test.status === "missed")
+  const pendingTests = tests.filter(
+    (test) => test.status === "pending" && !test.testCompleted && test.status !== "completed",
+  )
+  const completedTests = tests.filter((test) => test.testCompleted === true || test.status === "completed")
+  const missedTests = tests.filter((test) => {
+    const timeRemaining = calculateTimeRemaining(test.createdAt)
+    return timeRemaining.expired && !test.testCompleted && test.status !== "completed"
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">My Tests</h1>
               <p className="text-gray-600 mt-1">Manage your assigned tests and track your progress</p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Welcome back,</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
-              </p>
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Welcome back,</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {userData ? `${userData.firstName} ${userData.lastName}` : "N/A"}
+                </p>
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                >
+                  {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
+                  <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                </button>
+
+                {/* Logout Confirmation Dialog */}
+                {showLogoutConfirm && (
+                  <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm  flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Logout</h3>
+                      <p className="text-gray-600 mb-4">
+                        Are you sure you want to logout? You'll need to login again to access your tests.
+                      </p>
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={() => setShowLogoutConfirm(false)}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowLogoutConfirm(false)
+                            handleLogout()
+                          }}
+                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -171,7 +226,7 @@ export default function UserDashboard() {
               <div>
                 <p className="text-sm text-gray-500">Full Name</p>
                 <p className="font-medium text-gray-900">
-                  {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
+                  {userData ? `${userData.firstName} ${userData.lastName}` : "N/A"}
                 </p>
               </div>
             </div>
@@ -179,14 +234,14 @@ export default function UserDashboard() {
               <Mail size={20} className="text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium text-gray-900">{userData?.email || 'Loading...'}</p>
+                <p className="font-medium text-gray-900">{userData?.email || "N/A"}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Phone size={20} className="text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Phone</p>
-                <p className="font-medium text-gray-900">{userData?.phone || '23456734765'}</p>
+                <p className="font-medium text-gray-900">{userData?.phone || "N/A"}</p>
               </div>
             </div>
           </div>
@@ -240,14 +295,14 @@ export default function UserDashboard() {
               {pendingTests.map((test) => {
                 const timeRemaining = calculateTimeRemaining(test.createdAt)
                 return (
-                  <div key={test.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div key={test._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{test.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{test.company}</p>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{test.template.name}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{test.template.position}</p>
                         <div className="flex items-center space-x-2 mb-2">
                           <Briefcase size={14} className="text-gray-400" />
-                          <span className="text-sm text-gray-600">{test.position}</span>
+                          <span className="text-sm text-gray-600">{test.template.position}</span>
                         </div>
                       </div>
                       <span
@@ -258,59 +313,31 @@ export default function UserDashboard() {
                       </span>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-4">{test.description}</p>
-
-                    <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <p className="text-gray-500">Questions</p>
-                        <p className="font-semibold text-gray-900">{test.totalQuestions}</p>
-                      </div>
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <p className="text-gray-500">Duration</p>
-                        <p className="font-semibold text-gray-900">{test.duration} min</p>
-                      </div>
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <p className="text-gray-500">Total Marks</p>
-                        <p className="font-semibold text-gray-900">{test.totalMarks}</p>
-                      </div>
-                    </div>
-
-                    {/* Timer */}
-                    <div
-                      className={`p-3 rounded-lg mb-4 ${timeRemaining.expired ? "bg-red-50 border border-red-200" : "bg-yellow-50 border border-yellow-200"}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Timer size={16} className={timeRemaining.expired ? "text-red-600" : "text-yellow-600"} />
-                          <span className="text-sm font-medium text-gray-700">
-                            {timeRemaining.expired ? "Test Expired" : "Time Remaining"}
-                          </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-1">
+                          <Timer size={14} className="text-gray-400" />
+                          <span className="text-sm text-gray-600">{test.template.testDuration} min</span>
                         </div>
-                        <span
-                          className={`text-sm font-bold ${timeRemaining.expired ? "text-red-600" : "text-yellow-600"}`}
-                        >
-                          {formatTimeRemaining(timeRemaining)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-500">
-                        <Calendar size={12} className="inline mr-1" />
-                        Assigned: {new Date(test.createdAt).toLocaleDateString()}
+                        <div className="flex items-center space-x-1">
+                          <FileText size={14} className="text-gray-400" />
+                          <span className="text-sm text-gray-600">{test.template.questions.length} questions</span>
+                        </div>
                       </div>
                       <button
-                        onClick={() => handleTakeTest(test.id)}
-                        disabled={timeRemaining.expired}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                          timeRemaining.expired
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                        }`}
+                        onClick={() => handleTakeTest(test._id)}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
-                        <Play size={16} />
-                        <span>{timeRemaining.expired ? "Expired" : "Take Test"}</span>
+                        <Play size={14} className="mr-1" />
+                        Take Test
                       </button>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Time Remaining:</span>
+                        <span className="font-medium text-blue-600">{formatTimeRemaining(timeRemaining)}</span>
+                      </div>
                     </div>
                   </div>
                 )
@@ -328,84 +355,43 @@ export default function UserDashboard() {
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {completedTests.map((test) => (
-                <div key={test.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div key={test._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{test.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{test.company}</p>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{test.template.name}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{test.template.position}</p>
                       <div className="flex items-center space-x-2 mb-2">
                         <Briefcase size={14} className="text-gray-400" />
-                        <span className="text-sm text-gray-600">{test.position}</span>
+                        <span className="text-sm text-gray-600">{test.template.position}</span>
                       </div>
                     </div>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(test.status)}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor("completed")}`}
                     >
-                      {getStatusIcon(test.status)}
-                      <span className="ml-1">{test.status.toUpperCase()}</span>
+                      {getStatusIcon("completed")}
+                      <span className="ml-1">COMPLETED</span>
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                    <div className="text-center p-2 bg-gray-50 rounded">
-                      <p className="text-gray-500">Score</p>
-                      <p className="font-semibold text-gray-900">
-                        {test.score}/{test.totalMarks}
-                      </p>
-                    </div>
-                    <div className="text-center p-2 bg-gray-50 rounded">
-                      <p className="text-gray-500">Percentage</p>
-                      <p className="font-semibold text-gray-900">{Math.round((test.score / test.totalMarks) * 100)}%</p>
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-gray-500">
-                    <Calendar size={12} className="inline mr-1" />
-                    Completed: {new Date(test.completedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Missed Tests Section */}
-        {missedTests.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <XCircle size={20} className="text-red-600" />
-              <span>Missed Tests</span>
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {missedTests.map((test) => (
-                <div key={test.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 opacity-75">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{test.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{test.company}</p>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Briefcase size={14} className="text-gray-400" />
-                        <span className="text-sm text-gray-600">{test.position}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-1">
+                        <Timer size={14} className="text-gray-400" />
+                        <span className="text-sm text-gray-600">{test.template.testDuration} min</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <FileText size={14} className="text-gray-400" />
+                        <span className="text-sm text-gray-600">{test.template.questions.length} questions</span>
                       </div>
                     </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(test.status)}`}
-                    >
-                      {getStatusIcon(test.status)}
-                      <span className="ml-1">{test.status.toUpperCase()}</span>
-                    </span>
                   </div>
 
-                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-4">
-                    <div className="flex items-center space-x-2">
-                      <AlertTriangle size={16} className="text-red-600" />
-                      <span className="text-sm font-medium text-red-800">Test deadline has passed</span>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Completed on:</span>
+                      
+                      <span className="font-medium text-gray-900">{new Date(test.testSubmissionDate).toLocaleDateString()}</span>
                     </div>
-                  </div>
-
-                  <div className="text-xs text-gray-500">
-                    <Calendar size={12} className="inline mr-1" />
-                    Assigned: {new Date(test.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               ))}

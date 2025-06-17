@@ -1,33 +1,14 @@
-
 import { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
-import {
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
-  Flag,
-  HelpCircle,
-  CheckSquare,
-  CodeIcon,
-  FileText,
-  AlertTriangle,
-  XCircle,
-  ExternalLink,
-} from "lucide-react"
+import { useParams, useNavigate } from "react-router-dom"
+import { Clock, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, User, Mail, Phone, Briefcase, Flag, HelpCircle, CheckSquare, CodeIcon, FileText, AlertTriangle, XCircle, ExternalLink } from 'lucide-react'
 
-import { getTest ,submitTest} from "../../api/test"
+import { getUserAllInfo, submitTest } from "../../api/test"
 
 // Mock test data
 const mockTest = {
   id: "test-123",
   title: "React Developer Assessment",
-  duration: 45, // in minute
+  testDuration: 45, // in minutes
   totalQuestions: 10,
   instructions: [
     "Read each question carefully before answering.",
@@ -51,7 +32,7 @@ export default function CandidateTestPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState([])
   const [flaggedQuestions, setFlaggedQuestions] = useState([])
-  const [timeRemaining, setTimeRemaining] = useState(test.duration * 60) // in seconds
+  const [timeRemaining, setTimeRemaining] = useState(0) // in seconds
   const [testStarted, setTestStarted] = useState(false)
   const [testSubmitted, setTestSubmitted] = useState(false)
   const [showInstructions, setShowInstructions] = useState(true)
@@ -64,6 +45,17 @@ export default function CandidateTestPage() {
 
   const param = useParams()
   const { id } = param
+  const navigate = useNavigate()
+
+  // Set time remaining based on testDuration
+  useEffect(() => {
+    if (test && test.testDuration) {
+      setTimeRemaining(test.testDuration * 60) // Convert minutes to seconds
+    } else if (test && test.duration) {
+      // Fallback to duration if testDuration is not available
+      setTimeRemaining(test.duration * 60)
+    }
+  }, [test])
 
   // Timer functionality
   useEffect(() => {
@@ -73,10 +65,19 @@ export default function CandidateTestPage() {
       }, 1000)
 
       return () => clearInterval(timer)
-    } else if (timeRemaining === 0 && !testSubmitted) {
+    } else if (timeRemaining === 0 && !testSubmitted && testStarted) {
       handleSubmitTest()
     }
   }, [testStarted, testSubmitted, timeRemaining])
+
+  useEffect(() => {
+    if (testSubmitted) {
+      const timer = setTimeout(() => {
+        navigate('/user')
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [testSubmitted, navigate])
 
   async function handleGetTest() {
     setIsLoading(true)
@@ -84,40 +85,66 @@ export default function CandidateTestPage() {
     setIsTestExpired(false)
 
     try {
-      const response = await getTest(id)
+      console.log("Starting handleGetTest...");
+      const response = await getUserAllInfo()
+      console.log("Response from getUserAllInfo:", response)
 
-      if (response.status === 200) {
-        console.log("success")
+      if (response && response.data && response.data.assignments) {
+        console.log("API call successful, data:", response.data)
 
-        // Check if test is expired
-        if (response.data.test.isExpired) {
-          setIsTestExpired(true)
+        // Get all assignments
+        const assignments = response.data.assignments
+        
+        if (!assignments || assignments.length === 0) {
+          setError("No test assignments found")
           setIsLoading(false)
           return
         }
 
-        setTest(response.data.test)
+        // Find the specific test assignment using the test ID from URL params
+        const testAssignment = assignments.find(assignment => assignment._id === id)
+        
+        if (!testAssignment) {
+          setError("Test not found")
+          setIsLoading(false)
+          return
+        }
 
-        // Initialize candidate info from test data
-        if (response.data.test) {
-          setCandidateInfo({
-            name: response.data.test.name || "",
-            email: response.data.test.email || "",
-            phone: response.data.test.phone || "",
-            position: response.data.test.position || "",
-          })
+        console.log("Selected test assignment:", testAssignment)
+        
+        // Set test data from the template
+        setTest({
+          _id: testAssignment._id,
+          title: testAssignment.template.name,
+          testDuration: testAssignment.template.testDuration,
+          questions: testAssignment.template.questions,
+          position: testAssignment.template.position,
+          maxScore: testAssignment.template.maxScore,
+          testCompleted: testAssignment.testCompleted,
+          totalScore: testAssignment.totalScore,
+          feedback: testAssignment.feedback,
+          candidateAnswers: testAssignment.candidateAnswers
+        })
+
+        // Initialize candidate info from test assignment data
+        setCandidateInfo({
+          name: `${testAssignment.candidate.firstName} ${testAssignment.candidate.lastName}`,
+          email: testAssignment.email,
+          phone: testAssignment.phone,
+          position: testAssignment.template.position,
+        })
+
+        // If test is completed, set testSubmitted to true
+        if (testAssignment.testCompleted) {
+          setTestSubmitted(true)
         }
       } else {
+        console.error("Invalid API response:", response)
         setError("Failed to load test. Please try again later.")
       }
     } catch (error) {
-      console.error(error)
+      console.error("Error in handleGetTest:", error)
       setError("Something went wrong. Please try again later.")
-
-      // Check if error is related to test expiration
-      if (error.response && error.response.status === 410) {
-        setIsTestExpired(true)
-      }
     } finally {
       setIsLoading(false)
     }
@@ -191,21 +218,30 @@ export default function CandidateTestPage() {
       const finalAnswers = answers.map((answer, index) => {
         const question = test.questions[index]
         return {
-          question: question._id,
-          answer: answer,   
+          questionId: question._id,
+          answer: answer || "" // Ensure empty answers are sent as empty strings
         }
       })
 
-      const response=await submitTest({testId:test._id, answers: finalAnswers})
-      // Here you would typically send the answers to your backend
-     console.log("Submitting test with answers:", finalAnswers)
-      console.log("Response:", response)
-      if (response.status !== 200) {
-        setError("Failed to submit test. Please try again later.")
-        return  
-      }   
+      try {
+        const response = await submitTest({
+          assignmentId: test._id,
+          answers: finalAnswers
+        })
 
-      setTestSubmitted(true)
+        console.log("Submitting test with answers:", finalAnswers)
+        console.log("Response:", response)
+        
+        if (response.status !== 200) {
+          setError("Failed to submit test. Please try again later.")
+          return  
+        }   
+
+        setTestSubmitted(true)
+      } catch (error) {
+        console.error("Error submitting test:", error)
+        setError("Failed to submit test. Please try again later.")
+      }
     } else {
       setConfirmSubmit(true)
     }
@@ -335,8 +371,8 @@ export default function CandidateTestPage() {
   // Error state - General error
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="min-h-screen bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-2xl p-8 text-center transform transition-all">
           <AlertTriangle size={64} className="mx-auto text-yellow-500 mb-6" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Something Went Wrong</h1>
           <p className="text-gray-600 mb-6">{error}</p>
@@ -375,13 +411,39 @@ export default function CandidateTestPage() {
   if (testSubmitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <CheckCircle size={64} className="mx-auto text-green-500 mb-6" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Test Submitted Successfully!</h1>
-          <p className="text-gray-600 mb-6">Thank you for completing the test. Your responses have been recorded.</p>
-          <p className="text-sm text-gray-500">
-            You will be notified about the results via email at {candidateInfo.email}
-          </p>
+        <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center mb-8">
+            <CheckCircle size={64} className="mx-auto text-green-500 mb-6" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Test {test.testCompleted ? 'Completed' : 'Submitted Successfully!'}</h1>
+            {test.testCompleted ? (
+              <>
+                <p className="text-gray-600 mb-4">Your test has been evaluated.</p>
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">Score</p>
+                      <p className="text-2xl font-bold text-blue-600">{test.totalScore}/{test.maxScore}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">Status</p>
+                      <p className="text-2xl font-bold text-blue-600">{test.status}</p>
+                    </div>
+                  </div>
+                  {test.feedback && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Feedback:</p>
+                      <p className="text-gray-600">{test.feedback}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-gray-600 mb-6">Thank you for completing the test. Your responses have been recorded.</p>
+            )}
+            <p className="text-sm text-gray-500">
+              You will be notified about the results via email at {candidateInfo.email}
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -408,6 +470,7 @@ export default function CandidateTestPage() {
                     <input
                       type="text"
                       value={candidateInfo.name}
+                      disabled
                       onChange={(e) => handleCandidateInfoChange("name", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
@@ -434,6 +497,7 @@ export default function CandidateTestPage() {
                     <input
                       type="tel"
                       value={candidateInfo.phone}
+                      disabled
                       onChange={(e) => handleCandidateInfoChange("phone", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
@@ -454,32 +518,20 @@ export default function CandidateTestPage() {
                 </div>
               </div>
 
-              {/* <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Instructions</h2>
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    {test.instructions.map((instruction, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-800 text-xs font-medium mr-2 mt-0.5">
-                          {index + 1}
-                        </span>
-                        {instruction}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div> */}
-
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Overview</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <p className="text-sm text-gray-500">Duration</p>
-                    <p className="text-xl font-bold text-gray-900">{test.duration} min</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {test.testDuration || test.duration || 0} min
+                    </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <p className="text-sm text-gray-500">Questions</p>
-                    <p className="text-xl font-bold text-gray-900">{test.totalQuestions}</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {test.questions ? test.questions.length : test.totalQuestions || 0}
+                    </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <p className="text-sm text-gray-500">Total Marks</p>
@@ -491,7 +543,11 @@ export default function CandidateTestPage() {
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <p className="text-sm text-gray-500">Question Types</p>
-                    <p className="text-xl font-bold text-gray-900">3</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {test.questions && test.questions.length > 0
+                        ? new Set(test.questions.map(q => q.type)).size
+                        : 3}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -689,11 +745,11 @@ export default function CandidateTestPage() {
 
       {/* Confirm submit modal */}
       {confirmSubmit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl transform transition-all">
             <div className="text-center mb-6">
               <AlertCircle size={48} className="mx-auto text-yellow-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900">Submit Test?</h3>
+              <h3 className="text-xl font-bold text-gray-900">Submit Test?</h3>
               <p className="text-gray-600 mt-2">
                 You have answered {answers.filter((answer) => answer && answer.toString().trim() !== "").length} out of{" "}
                 {test.questions.length} questions. Are you sure you want to submit your test?

@@ -179,7 +179,7 @@ export default function TestAssignmentForm() {
         setSelectedTest(null)
         setSelectedUser(null)
       } else {
-        toast.error(<ErrorToast message={response.message || "Failed to assign test. Please try again."} />)
+        toast.error(<ErrorToast message={"This test has already been assigned to the selected user. Please choose a different test or user."} />)
       }
     } catch (error) {
       console.error("Error assigning test:", error)

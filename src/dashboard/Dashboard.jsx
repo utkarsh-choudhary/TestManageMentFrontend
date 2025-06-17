@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
-import { Search, Bell, Settings } from "lucide-react"
+import { Search, Bell, Settings, LogOut } from "lucide-react"
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom"
 import Sidebar from "../components/sidebar/Sidebar"
 import DashboardContent from "../components/dashboard/DashboardContent"
@@ -11,8 +11,10 @@ export default function Dashboard() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [particles, setParticles] = useState([])
   const [floatingShapes, setFloatingShapes] = useState([])
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const dropdownRef = useRef(null)
 
   const canvasRef = useRef(null)
   const animationRef = useRef()
@@ -153,6 +155,26 @@ export default function Dashboard() {
     }
   }, [particles, mousePosition])
 
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowSettingsDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    // For example: clear local storage, cookies, etc.
+    localStorage.removeItem('token') // Assuming you store auth token in localStorage
+    localStorage.removeItem('role')
+    navigate('/') // Navigate to login page
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden font-sans bg-gray-50">
       {/* Animated Canvas Background */}
@@ -232,9 +254,26 @@ export default function Dashboard() {
                   <Bell className="h-5 w-5 text-gray-600" />
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Settings className="h-5 w-5 text-gray-600" />
-                </button>
+                <div className="relative" ref={dropdownRef}>
+                  <button 
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                  >
+                    <Settings className="h-5 w-5 text-gray-600" />
+                  </button>
+                  
+                  {showSettingsDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-100">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </header>

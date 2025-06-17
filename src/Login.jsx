@@ -516,7 +516,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 text-center text-sm text-white/60 animate-fade-in-up animation-delay-400">
-            <p>© 2024 Task Management. All rights reserved.</p>
+            <p>© 2024 Test Management. All rights reserved.</p>
           </div>
         </div>
       </div>

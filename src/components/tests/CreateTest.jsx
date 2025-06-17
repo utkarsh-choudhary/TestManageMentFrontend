@@ -383,6 +383,13 @@ export default function TestCreationForm() {
                 <span className="font-medium text-gray-900">{getTotalMarks()}</span>
               </div>
               <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Test Duration:</span>
+                <span className="font-medium text-gray-900">
+                  {Math.floor(testData.testDuration / 60) > 0 && `${Math.floor(testData.testDuration / 60)}h `}
+                  {testData.testDuration % 60 > 0 && `${testData.testDuration % 60}m`}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-500">MCQ Questions:</span>
                 <span className="font-medium text-gray-900">
                   {testData.questions.filter((q) => q.type === "mcq").length}
@@ -436,7 +443,7 @@ export default function TestCreationForm() {
 
       {/* Modals */}
       {showQuestionModal && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Add New Question</h3>
@@ -456,7 +463,7 @@ export default function TestCreationForm() {
       )}
 
       {showTypeModal && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Select Question Type</h3>
@@ -503,7 +510,7 @@ export default function TestCreationForm() {
       )}
 
       {showQuestionInputModal && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
